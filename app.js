@@ -119,14 +119,16 @@ module.exports = app => {
 
     for (let topic of topics) {
       // TODO  check options property
-      for (let key of options[`${topic}-KEYS`]) {
-        const filepath = path.join(app.config.baseDir, `app/kafka/${topic}/` + key + '_consumer.js');
-        if (!fs.existsSync(filepath)) {
-          app.coreLogger.warn('[egg-kafkajs] CANNOT find the subscription logic in file:`%s` for topic=%s', filepath, topic);
-          continue;
-        } else {
-          const Subscriber = require(filepath);
-          topic2Subscription.set(`${topic}:${key}`, Subscriber);
+      if(options[`${topic}-KEYS`]) {
+        for (let key of options[`${topic}-KEYS`]) {
+          const filepath = path.join(app.config.baseDir, `app/kafka/${topic}/` + key + '_consumer.js');
+          if (!fs.existsSync(filepath)) {
+            app.coreLogger.warn('[egg-kafkajs] CANNOT find the subscription logic in file:`%s` for topic=%s', filepath, topic);
+            continue;
+          } else {
+            const Subscriber = require(filepath);
+            topic2Subscription.set(`${topic}:${key}`, Subscriber);
+          }
         }
       }
       const defaultfilepath = path.join(app.config.baseDir, `app/kafka/${topic}/default_consumer.js`);

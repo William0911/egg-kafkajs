@@ -11,6 +11,7 @@ const { Producer, ConsumerGroup } = require('kafka-node');
 
 const Message = require('./lib/message');
 const Client = require('./lib/client');
+const Throttle = require('./lib/throttle');
 
 
 module.exports = app => {
@@ -40,6 +41,20 @@ module.exports = app => {
     }
   }
 
+  async function messageWorker(message) {
+    let { topic, key } = message;
+    const Subscriber = topic2Subscription.get(`${topic}:${key}`) || topic2Subscription.get(`${topic}:default`);
+    if (Subscriber) {
+      const ctx = app.createAnonymousContext();
+      const subscriber = new Subscriber(ctx);
+      return subscriber.subscribe(message);
+    } else {
+      return new Promise(function(resolve, reject){
+        reject(new Error(`Missing subscriber for ${topic}:${key}`));
+      });
+    }
+  }
+
   for (const options of sub) {
     const topics = options.topics || [];
     let defaultOptions = {
@@ -66,6 +81,26 @@ module.exports = app => {
       keyEncoding: 'utf8'
     };
     const consumer = new ConsumerGroup(defaultOptions, topics);
+    let messageHandler = messageWorker;
+    if (options.throttle instanceof Object) {
+      const throttle = new Throttle(async function(message) {
+        await messageWorker(message);
+        if(consumer.paused && throttle.isAvailable()) {
+          consumer.resume();
+        }
+      }, {
+        concurrency: options.throttle.concurrency,
+        highWaterMark: options.throttle.highWaterMark,
+        errorHandler: errorHandler,
+        drain: function() { if(consumer.paused) consumer.resume(); }
+      });
+      messageHandler = function(message) {
+        if(!consumer.paused && throttle.isBusy()) {
+          consumer.pause();
+        }
+        throttle.push(message);
+      }
+    }
 
     consumer.on('error', errorHandler);
     consumer.on('connect', () => {
@@ -94,30 +129,22 @@ module.exports = app => {
           topic2Subscription.set(`${topic}:${key}`, Subscriber);
         }
       }
+      const defaultfilepath = path.join(app.config.baseDir, `app/kafka/${topic}/default_consumer.js`);
+      if (fs.existsSync(defaultfilepath)) {
+        const Subscriber = require(defaultfilepath);
+        topic2Subscription.set(`${topic}:default`, Subscriber);
+      }
     }
 
-    consumer.on('message', function (message) {
-      let { topic, key } = message;
-      const filepath = path.join(app.config.baseDir, `app/kafka/${topic}/` + key +  '_consumer.js');
-
-      if (!fs.existsSync(filepath)) {
-        app.coreLogger.warn('[egg-kafkajs] CANNOT find the subscription logic in file:`%s` for topic=%s & key=%s', filepath, topic, key);
-      }
-      const Subscriber = topic2Subscription.get(`${topic}:${key}`);
-      if (Subscriber) {
-        const ctx = app.createAnonymousContext();
-        const subscriber = new Subscriber(ctx);
-        subscriber.subscribe(message);
-      }
-    });
+    consumer.on('message', messageHandler);
   }
 
   const ProducerPrototype = new Producer(kafkaClient);
-  const  producer = Promise.promisifyAll(ProducerPrototype);
+  const producer = Promise.promisifyAll(ProducerPrototype);
 
   producer.onAsync('ready').then(function() {
     heartEvent.emit('producerConnected');
-  });  
+  });
   producer.onAsync('error', errorHandler);
 
   app.beforeStart(function* () {

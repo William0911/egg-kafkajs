@@ -1,4 +1,7 @@
 {
   "name": "kafkajs-test",
-  "version": "0.0.1"
+  "version": "0.0.1",
+  "dependencies": {
+    "uuid": "^3.3.2"
+  }
 }

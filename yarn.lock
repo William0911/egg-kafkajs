@@ -1143,6 +1143,11 @@ block-stream@*:
   dependencies:
     inherits "~2.0.0"
 
+bluebird@^3.5.1:
+  version "3.5.3"
+  resolved "http://registry.npm.taobao.org/bluebird/download/bluebird-3.5.3.tgz#7d01c6f9616c9a51ab0f8c549a79dfe6ec33efa7"
+  integrity sha1-fQHG+WFsmlGrD4xUmnnf5uwz76c=
+
 boom@2.x.x:
   version "2.10.1"
   resolved "https://registry.yarnpkg.com/boom/-/boom-2.10.1.tgz#39c8918ceff5799f83f9492a848f625add0c766f"
@@ -3440,9 +3445,10 @@ jsx-ast-utils@^2.0.0:
   dependencies:
     array-includes "^3.0.3"
 
-kafka-node@^2.3.1:
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/kafka-node/-/kafka-node-2.3.1.tgz#54f11525f7b9575924a326a06f40164558e46d54"
+kafka-node@^2.3.0:
+  version "2.6.1"
+  resolved "http://registry.npm.taobao.org/kafka-node/download/kafka-node-2.6.1.tgz#e8aee3b642105574fabaa718dc4e90d24767a64d"
+  integrity sha1-6K7jtkIQVXT6uqcY3E6Q0kdnpk0=
   dependencies:
     async "^2.5.0"
     binary "~0.3.0"

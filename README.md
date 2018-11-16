@@ -45,11 +45,20 @@ config.kafkajs = {
     host: '127.0.0.1:2181',
     sub: [
       {
-        groupId: 'consumer-groupId',
+        groupId: 'group-normal',
         topics: [ 'topic1', 'topic2' ],
         topic1: [ 'key1', 'key2' ],
         topic2: [ 'key3', 'key4' ],
       },
+      {
+        groupId: 'group-with-throttle',
+        throttle: {
+          concurrency: 1,
+          highWaterMark: 100,
+        }
+        topics: [ 'topic3' ],
+        topic3: [ 'key1', 'key2' ],
+      }
     ],
     pub:
       {

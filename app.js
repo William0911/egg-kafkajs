@@ -3,16 +3,15 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
+const { writable, pipeline  } = require('stream');
 const Promise = require('bluebird');
 const EventEmitter = require('events');
 const awaitEvent = require('await-event');
 const kafkaLogging = require('kafka-node/logging');
-const { Producer, ConsumerGroup } = require('kafka-node');
-
+const { Producer, ConsumerGroup, ConsumerGroupStream } = require('kafka-node');
 const Message = require('./lib/message');
 const Client = require('./lib/client');
-const Throttle = require('./lib/throttle');
-
+const pipeline = util.promisify(stream.pipeline);
 
 module.exports = app => {
   const logger = app.getLogger('kafkaLogger');
@@ -41,20 +40,6 @@ module.exports = app => {
     }
   }
 
-  async function messageWorker(message) {
-    let { topic, key } = message;
-    const Subscriber = topic2Subscription.get(`${topic}:${key}`) || topic2Subscription.get(`${topic}:default`);
-    if (Subscriber) {
-      const ctx = app.createAnonymousContext();
-      const subscriber = new Subscriber(ctx);
-      return subscriber.subscribe(message);
-    } else {
-      return new Promise(function(resolve, reject){
-        reject(new Error(`Missing subscriber for ${topic}:${key}`));
-      });
-    }
-  }
-
   for (const options of sub) {
     const topics = options.topics || [];
     let defaultOptions = {
@@ -78,29 +63,11 @@ module.exports = app => {
       migrateHLC: false,    // for details please see Migration section below
       migrateRolling: true,
       encoding: 'buffer', //trans binary data
-      keyEncoding: 'utf8'
+      keyEncoding: 'utf8',
+      highWaterMark: options.highWaterMark
     };
-    const consumer = new ConsumerGroup(defaultOptions, topics);
-    let messageHandler = messageWorker;
-    if (options.throttle instanceof Object) {
-      const throttle = new Throttle(async function(message) {
-        await messageWorker(message);
-        if(consumer.paused && throttle.isAvailable()) {
-          consumer.resume();
-        }
-      }, {
-        concurrency: options.throttle.concurrency,
-        highWaterMark: options.throttle.highWaterMark,
-        errorHandler: errorHandler,
-        drain: function() { if(consumer.paused) consumer.resume(); }
-      });
-      messageHandler = function(message) {
-        if(!consumer.paused && throttle.isBusy()) {
-          consumer.pause();
-        }
-        throttle.push(message);
-      }
-    }
+
+    const consumer = options.stream ? new ConsumerGroupStream(kafkaClient, topics, defaultOptions) : new ConsumerGroup(kafkaClient, topics, defaultOptions;
 
     consumer.on('error', errorHandler);
     consumer.on('connect', () => {
@@ -138,7 +105,29 @@ module.exports = app => {
       }
     }
 
-    consumer.on('message', messageHandler);
+    async function handleMessage(message) {
+      let { topic, key } = message;
+      const Subscriber = topic2Subscription.get(`${topic}:${key}`) || topic2Subscription.get(`${topic}:default`);
+      if (Subscriber) {
+        const ctx = app.createAnonymousContext();
+        const subscriber = new Subscriber(ctx);
+        return subscriber.subscribe(message);
+      } else {
+        return new Promise(function(resolve, reject){
+          reject(new Error(`Missing subscriber for ${topic}:${key}`));
+        });
+      }
+    }
+    if (options.stream) {
+      consumer.on('readable', async function () {
+        const message = consumer.read();
+        console.log('begin handle: ', message.key);
+        await handleMessage(message);
+        console.log('end handle: ', message.key);
+      });
+    } else {
+      consumer.on('message', handleMessage);
+    }
   }
 
   const ProducerPrototype = new Producer(kafkaClient);

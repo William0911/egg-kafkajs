@@ -52,10 +52,8 @@ config.kafkajs = {
       },
       {
         groupId: 'group-with-throttle',
-        throttle: {
-          concurrency: 1,
-          highWaterMark: 100,
-        }
+        stream: true,
+        highWaterMark: 100,
         topics: [ 'topic3' ],
         topic3: [ 'key1', 'key2' ],
       }

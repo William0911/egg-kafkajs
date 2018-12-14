@@ -1762,6 +1762,11 @@ delegates@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delegates/-/delegates-1.0.0.tgz#84c6e159b81904fdca59a0ef44cd870d31250f9a"
 
+denque@^1.3.0:
+  version "1.4.0"
+  resolved "http://registry.npm.taobao.org/denque/download/denque-1.4.0.tgz#79e2f0490195502107f24d9553f374837dabc916"
+  integrity sha1-eeLwSQGVUCEH8k2VU/N0g32ryRY=
+
 depd@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/depd/-/depd-1.1.1.tgz#5783b4e1c459f06fa5ca27f991f3d06e7a310359"
@@ -3445,10 +3450,10 @@ jsx-ast-utils@^2.0.0:
   dependencies:
     array-includes "^3.0.3"
 
-kafka-node@^2.3.0:
-  version "2.6.1"
-  resolved "http://registry.npm.taobao.org/kafka-node/download/kafka-node-2.6.1.tgz#e8aee3b642105574fabaa718dc4e90d24767a64d"
-  integrity sha1-6K7jtkIQVXT6uqcY3E6Q0kdnpk0=
+kafka-node@^3.0.0:
+  version "3.0.1"
+  resolved "http://registry.npm.taobao.org/kafka-node/download/kafka-node-3.0.1.tgz#7d0a630a952f742f7c792be24fa762e0b9b488d6"
+  integrity sha1-fQpjCpUvdC98eSviT6di4Lm0iNY=
   dependencies:
     async "^2.5.0"
     binary "~0.3.0"
@@ -3456,6 +3461,7 @@ kafka-node@^2.3.0:
     buffer-crc32 "~0.2.5"
     buffermaker "~1.2.0"
     debug "^2.1.3"
+    denque "^1.3.0"
     lodash "^4.17.4"
     minimatch "^3.0.2"
     nested-error-stacks "^2.0.0"

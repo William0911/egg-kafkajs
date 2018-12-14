@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const { writable, pipeline  } = require('stream');
+const { Writable } = require('stream');
 const Promise = require('bluebird');
 const EventEmitter = require('events');
 const awaitEvent = require('await-event');
@@ -11,7 +11,6 @@ const kafkaLogging = require('kafka-node/logging');
 const { Producer, ConsumerGroup, ConsumerGroupStream } = require('kafka-node');
 const Message = require('./lib/message');
 const Client = require('./lib/client');
-const pipeline = util.promisify(stream.pipeline);
 
 module.exports = app => {
   const logger = app.getLogger('kafkaLogger');
@@ -67,7 +66,7 @@ module.exports = app => {
       highWaterMark: options.highWaterMark
     };
 
-    const consumer = options.stream ? new ConsumerGroupStream(kafkaClient, topics, defaultOptions) : new ConsumerGroup(kafkaClient, topics, defaultOptions;
+    const consumer = options.stream ? new ConsumerGroupStream(defaultOptions, topics) : new ConsumerGroup(defaultOptions, topics);
 
     consumer.on('error', errorHandler);
     consumer.on('connect', () => {
@@ -119,12 +118,14 @@ module.exports = app => {
       }
     }
     if (options.stream) {
-      consumer.on('readable', async function () {
-        const message = consumer.read();
-        console.log('begin handle: ', message.key);
-        await handleMessage(message);
-        console.log('end handle: ', message.key);
+      const messageHandler = new Writable({
+        objectMode: true,
+        write: async(message, encoding, callback) => {
+          await handleMessage(message);
+          callback();
+        },
       });
+      consumer.pipe(messageHandler);
     } else {
       consumer.on('message', handleMessage);
     }

@@ -109,6 +109,7 @@ module.exports = app => {
       const Subscriber = topic2Subscription.get(`${topic}:${key}`) || topic2Subscription.get(`${topic}:default`);
       if (Subscriber) {
         const ctx = app.createAnonymousContext();
+        ctx.consumer = consumer;
         const subscriber = new Subscriber(ctx);
         return subscriber.subscribe(message);
       } else {

@@ -1,6 +1,6 @@
 {
-  "name": "egg-kafkajs",
-  "version": "0.0.6",
+  "name": "egg-keepwork-kafkajs",
+  "version": "0.0.7",
   "description": "kafka plugin for egg",
   "eggPlugin": {
     "name": "kafkajs"
@@ -54,10 +54,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eggjs/egg-kafkajs.git"
+    "url": "git+https://github.com/William0911/egg-kafkajs"
   },
   "bugs": {
-    "url": "https://github.com/eggjs/egg/issues"
+    "url": "https://github.com/William0911/egg-kafkajs/issues"
   },
   "homepage": "https://github.com/eggjs/egg-kafkajs#readme",
   "author": "quinton.xu",
